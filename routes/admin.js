@@ -221,23 +221,72 @@ router.post('/resources/:id/reject', async (req, res) => {
     const admin = requireAdmin(req, res);
     if (!admin) return;
 
-    const { reason } = req.body;
-    if (!reason || !reason.trim()) {
-      return res.status(400).json({ message: 'Rejection reason is required.' });
-    }
+    // 1. MUST pull 'subject' from req.body
+    const { reason, subject } = req.body; 
 
+    // 2. MUST use 'subject' in the query instead of 'admin.assigned_subject'
     await db.query(
       "UPDATE resources SET status = 'rejected', rejection_reason = ? WHERE id = ? AND subject = ?",
-      [reason.trim(), req.params.id, admin.assigned_subject]
+      [reason.trim(), req.params.id, subject] 
     );
 
     res.json({ message: 'Resource rejected.' });
-
   } catch (err) {
-    console.error('Reject resource error:', err);
-    res.status(500).json({ message: 'Could not reject resource.' });
+    res.status(500).send('Error');
   }
 });
+// router.post('/resources/:id/reject', async (req, res) => {
+//   try {
+//     const admin = requireAdmin(req, res);
+//     if (!admin) return;
+
+//     const { reason } = req.body;
+//     if (!reason || !reason.trim()) {
+//       return res.status(400).json({ message: 'Rejection reason is required.' });
+//     }
+
+//     await db.query(
+//       "UPDATE resources SET status = 'rejected', rejection_reason = ? WHERE id = ? AND subject = ?",
+//       [reason.trim(), req.params.id, admin.assigned_subject]
+//     );
+
+//     res.json({ message: 'Resource rejected.' });
+
+//   } catch (err) {
+//     console.error('Reject resource error:', err);
+//     res.status(500).json({ message: 'Could not reject resource.' });
+//   }
+// });
+// 1. Change POST to PUT (Standard for updates)
+// 2. Add /api (if your other routes use it)
+// router.put('/resources/:id/reject', async (req, res) => {
+//   try {
+//     const admin = requireAdmin(req, res);
+//     if (!admin) return res.status(401).json({ message: 'Unauthorized' });
+
+//     // Look for 'reason' OR 'rejection_reason' just in case
+//     const reason = req.body.reason || req.body.rejection_reason;
+
+//     if (!reason || !reason.trim()) {
+//       return res.status(400).json({ message: 'Rejection reason is required.' });
+//     }
+
+//     // We'll use your exact working data match from the screenshots
+//     const [result] = await db.query(
+//       "UPDATE resources SET status = 'rejected', rejection_reason = ? WHERE id = ? AND subject = ?",
+//       [reason.trim(), req.params.id, admin.assigned_subject]
+//     );
+
+//     if (result.affectedRows === 0) {
+//       return res.status(404).json({ message: 'No matching resource found for your subject.' });
+//     }
+
+//     res.json({ message: 'Resource rejected successfully.' });
+//   } catch (err) {
+//     console.error('Reject resource error:', err);
+//     res.status(500).json({ message: 'Server error during rejection.' });
+//   }
+// });
 
 // ─── GET /api/admin/pending-teachers ──────────────────────
 router.get('/pending-teachers', async (req, res) => {
